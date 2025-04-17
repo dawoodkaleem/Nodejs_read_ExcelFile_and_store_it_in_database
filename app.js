@@ -27,7 +27,7 @@ mongoose
   .connect("mongodb://127.0.0.1:27017/task2")
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌MongoDB Connection Failed:", err));
-app.use("/upload", categoryRoute);
+app.use("/category", categoryRoute);
 app.use("/subcategory", subcategoryRoute);
 app.use("/todos", todosRoute);
 

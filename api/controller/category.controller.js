@@ -27,6 +27,8 @@ export const getCategory = (req, res, next) => {
 
 export const readFileStoreInDatabase = async (req, res) => {
   try {
+    // console.log(req.files, "Checking how we are receving the files from users");
+    // console.log(req.files["categories"]?.[0]);
     const categoryFile = req.files["categories"]?.[0];
     const todosFile = req.files["todos"]?.[0];
 
@@ -43,7 +45,7 @@ export const readFileStoreInDatabase = async (req, res) => {
     const categorySheet =
       categoryWorkbook.Sheets[categoryWorkbook.SheetNames[0]];
     const categoryData = xlsx.utils.sheet_to_json(categorySheet);
-    console.log(categoryData, "post Category reading");
+    // console.log(categoryData, "post Category reading");
     const categoryCache = new Map();
     const subcategoryCache = new Map();
 
@@ -68,7 +70,7 @@ export const readFileStoreInDatabase = async (req, res) => {
         name: subcategoryName,
         categoryId: category._id,
       });
-      console.log(subcategory, "After save or created subcategory");
+      // console.log(subcategory, "After save or created subcategory");
       if (!subcategory) {
         subcategory = new SubcategoryModel({
           name: subcategoryName,
@@ -84,8 +86,7 @@ export const readFileStoreInDatabase = async (req, res) => {
     const todosWorkbook = xlsx.read(todosFile.buffer, { type: "buffer" });
     const todosSheet = todosWorkbook.Sheets[todosWorkbook.SheetNames[0]];
     const todosData = xlsx.utils.sheet_to_json(todosSheet);
-    // cons
-    // ole.log(todosData, "DAE");
+    // console.log(todosData, "DAE");
 
     for (const row of todosData) {
       const todoName = row.Todo?.trim();

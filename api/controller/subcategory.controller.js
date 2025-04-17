@@ -1,4 +1,3 @@
-import express from "express";
 import SubcategoryModel from "../models/subcatogory.model.js";
 // import subcatogoryModel from "../models/subcatogory.model.js";
 
@@ -76,7 +75,7 @@ export const getSubcategory_by_id = (req, res, next) => {
     });
 };
 
-export const deleteSubcategory = (req, res, next) => {
+export const deleteSubcategory = (req, res) => {
   const id = req.params.subcategoryId;
   SubcategoryModel.deleteOne({ _id: id })
     .exec()
