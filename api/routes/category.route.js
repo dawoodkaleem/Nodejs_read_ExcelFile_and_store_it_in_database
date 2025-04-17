@@ -107,11 +107,13 @@ const upload = multer({ storage: storage });
 //   }
 // );
 
-router.post(
-  "/",
-  upload.fields([{ name: "categories" }, { name: "todos" }]),
-  readFileStoreInDatabase
-);
+// router.post(
+//   "/",
+//   upload.single([{ name: "categories" }, { name: "todos" }]),
+//   readFileStoreInDatabase
+// );
+
+router.post("/", upload.single("categories"), readFileStoreInDatabase);
 router.get("/", getCategory);
 router.put("/:id", updateCategory);
 
