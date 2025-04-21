@@ -75,17 +75,34 @@ export const getSubcategory_by_id = (req, res, next) => {
     });
 };
 
-export const deleteSubcategory = (req, res) => {
+export const deleteSubcategory = async (req, res) => {
   const id = req.params.subcategoryId;
-  SubcategoryModel.deleteOne({ _id: id })
-    .exec()
-    .then(() => {
-      res.status(200).json({
-        message: `SubCategory Deleted sucessfully ${id}`,
-      });
-    })
-    .catch((err) => {
-      // console.log(err);
-      res.status(500).json({ error: err });
+
+  try {
+    await SubcategoryModel.deleteOne({ _id: id });
+
+    res.status(200).json({
+      message: `SubCategory deleted successfully: ${id}`,
     });
+  } catch (error) {
+    console.error("Delete Subcategory Error:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to delete subcategory", details: error.message });
+  }
 };
+
+// export const deleteSubcategory = (req, res) => {
+//   const id = req.params.subcategoryId;
+//   SubcategoryModel.deleteOne({ _id: id })
+//     .exec()
+//     .then(() => {
+//       res.status(200).json({
+//         message: `SubCategory Deleted sucessfully ${id}`,
+//       });
+//     })
+//     .catch((err) => {
+//       // console.log(err);
+//       res.status(500).json({ error: err });
+//     });
+// };
