@@ -8,6 +8,7 @@ import bodyParser from "body-parser";
 import categoryRoute from "./api/routes/category.route.js";
 import subcategoryRoute from "./api/routes/subcategory.route.js";
 import todosRoute from "./api/routes/todo.route.js";
+import userRoute from "./api/routes/user.route.js";
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -30,6 +31,7 @@ mongoose
 app.use("/category", categoryRoute);
 app.use("/subcategory", subcategoryRoute);
 app.use("/todos", todosRoute);
+app.use("/user", userRoute);
 
 // Route for uploading two files
 // app.post(
