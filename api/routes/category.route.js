@@ -13,6 +13,7 @@ import {
   updateCategory,
 } from "../controller/category.controller.js";
 
+import { userAuth as CheckAuth } from "../middleware/user.auth.js";
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -113,8 +114,13 @@ const upload = multer({ storage: storage });
 //   readFileStoreInDatabase
 // );
 
-router.post("/", upload.single("categories"), readFileStoreInDatabase);
-router.get("/", getCategory);
-router.put("/:id", updateCategory);
+router.post(
+  "/",
+  CheckAuth,
+  upload.single("categories"),
+  readFileStoreInDatabase
+);
+router.get("/", CheckAuth, getCategory);
+router.put("/:id", CheckAuth, updateCategory);
 
 export default router;
