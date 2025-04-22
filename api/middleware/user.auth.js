@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-
+import "dotenv/config";
 export const userAuth = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -10,7 +10,7 @@ export const userAuth = (req, res, next) => {
 
     const token = authHeader.split(" ")[1]; // Extract token after 'Bearer'
 
-    const decoded = jwt.verify(token, "secretkey"); // Todo implements dotenv file after this  process.env.JWT_SECRET
+    const decoded = jwt.verify(token, process.env.JWT_KEY); // Todo implements dotenv file after this  process.env.JWT_SECRET
     req.userData = decoded;
     next();
   } catch (error) {

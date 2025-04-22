@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
-
+import "dotenv/config.js";
 // import CategoryModel from "./api/models/category.model.js";
 // import SubcategoryModel from "./api/models/subcatogory.model.js";
 // import TodosModel from "./api/models/todos.model.js";
@@ -25,7 +25,7 @@ app.use(bodyParser.json());
 //   .catch((err) => console.error("❌MongoDB Connection Failed:", err));
 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/task2")
+  .connect(process.env.DB_URl)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌MongoDB Connection Failed:", err));
 app.use("/category", categoryRoute);

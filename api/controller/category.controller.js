@@ -188,3 +188,34 @@ export const updateCategory = async (req, res, next) => {
     return res.send("User not found");
   }
 };
+
+export const deleteCategory = async (req, res) => {
+  const id = req.params.categoryId;
+
+  try {
+    await CategoryModel.deleteOne({ _id: id });
+
+    res.status(200).json({
+      message: `Category deleted successfully: ${id}`,
+    });
+  } catch (error) {
+    console.error("Delete Category Error:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to delete Category", details: error.message });
+  }
+};
+
+export const getCategory_by_id = (req, res, next) => {
+  const id = req.params.categoryId;
+
+  CategoryModel.findById(id)
+    .exec()
+    .then((docs) => {
+      docs.name, id, res.status(200).json(docs);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: err });
+    });
+};

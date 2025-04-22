@@ -54,3 +54,52 @@ export const createTodos = async (req, res, next) => {
     res.status(500).json({ error: "Failed to process uploaded files" });
   }
 };
+
+export const updateTodos = async (req, res, next) => {
+  const id = req.params.todosId;
+  const name = req.body.name;
+  try {
+    const updatedTodos = await TodosModel.findByIdAndUpdate(
+      id,
+      { name },
+      {
+        new: true,
+      }
+    );
+
+    return res.send({ updatedUser }) || "User not found.";
+  } catch (err) {
+    return res.send("Todo not found");
+  }
+};
+
+export const getTodos_by_id = (req, res, next) => {
+  const id = req.params.todosId;
+
+  TodosModel.findById(id)
+    .exec()
+    .then((docs) => {
+      docs.name, id, res.status(200).json(docs);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: err });
+    });
+};
+
+export const deleteTodos = async (req, res) => {
+  const id = req.params.todosId;
+
+  try {
+    await TodosModel.deleteOne({ _id: id });
+
+    res.status(200).json({
+      message: `Todos deleted successfully: ${id}`,
+    });
+  } catch (error) {
+    console.error("Delete Todos Error:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to delete Todos", details: error.message });
+  }
+};
