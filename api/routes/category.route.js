@@ -11,6 +11,8 @@ import {
   getCategory,
   readFileStoreInDatabase,
   updateCategory,
+  deleteCategory,
+  getCategory_by_id,
 } from "../controller/category.controller.js";
 
 import { userAuth as CheckAuth } from "../middleware/user.auth.js";
@@ -122,5 +124,6 @@ router.post(
 );
 router.get("/", CheckAuth, getCategory);
 router.put("/:id", CheckAuth, updateCategory);
-
+router.delete("/:categoryId", CheckAuth, deleteCategory);
+router.get("/:categoryId", CheckAuth, getCategory_by_id);
 export default router;

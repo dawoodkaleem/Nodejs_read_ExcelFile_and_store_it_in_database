@@ -1,9 +1,10 @@
 import express from "express";
 const router = express.Router();
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import "dotenv/config.js";
 
 router.post("/signup", async (req, res, next) => {
   try {
@@ -105,7 +106,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         userId: user._id,
       },
-      "secretkey", // ideally use process.env.JWT_SECRET
+      process.env.JWT_KEY, // Todos Using use process.env.JWT_SECRETKEY not working
       { expiresIn: "1h" }
     );
 
