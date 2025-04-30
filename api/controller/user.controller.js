@@ -93,3 +93,23 @@ export const userSignup = async (req, res, next) => {
     res.status(500).json({ error: "Signup failed", details: error.message });
   }
 };
+
+// export const loadAuth = (req, res) => {
+//   console.log(req.profile);
+//   res.render("auth", req.profile);
+// };
+
+export const loadAuth = (req, res) => {
+  res.render("auth");
+};
+
+export const successGoogleLogin = (req, res) => {
+  if (!req.user) res.redirect("/failure");
+  console.log(req.user);
+  console.log("i am here")
+  res.send("Welcome " + req.user.email);
+};
+
+export const failureGoogleLogin = (req, res) => {
+  res.send("Error");
+};
