@@ -1,128 +1,267 @@
-import express from "express";
-import mongoose from "mongoose";
-import bodyParser from "body-parser";
-import "dotenv/config.js";
-// import CategoryModel from "./api/models/category.model.js";
-// import SubcategoryModel from "./api/models/subcatogory.model.js";
-// import TodosModel from "./api/models/todos.model.js";
-import categoryRoute from "./api/routes/category.route.js";
-import subcategoryRoute from "./api/routes/subcategory.route.js";
-import todosRoute from "./api/routes/todo.route.js";
-import userRoute from "./api/routes/user.route.js";
+import express from 'express';
+import mongoose from 'mongoose';
+import bodyParser from 'body-parser';
+import session from 'express-session';
+import passport from 'passport';
+import 'dotenv/config.js';
+import morgan from "morgan"
+import querystring from 'querystring'
+import categoryRoute from './api/routes/category.route.js';
+import subcategoryRoute from './api/routes/subcategory.route.js';
+import todosRoute from './api/routes/todo.route.js';
+import userRoute from './api/routes/user.route.js';
+import { Client } from "@hubspot/api-client";
+import axios from 'axios';  // Add this import
+import hubsportRoute from './api/routes/hubsport.route.js'
+// const hubspotClient = new Client({ accessToken: YOUR_ACCESS_TOKEN });
+import './passport.js'; // Passport strategy setup
 
 const app = express();
+
+// Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage: storage });
+app.use(
+  session({
+    resave: false,
+    saveUninitialized: true,
+    secret: process.env.SESSION_SECRET,
+  })
+);
 
-// mongoose
-//   .connect(
-//     "mongodb+srv://dawood9743:damon123@readexcelfile.o5ax09z.mongodb.net/?retryWrites=true&w=majority&appName=ReadExcelFile"
-//   )
-//   .then(() => console.log("✅ Connected to MongoDB"))
-//   .catch((err) => console.error("❌MongoDB Connection Failed:", err));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(morgan("dev"))
+app.set('view engine', 'ejs');
 
+// MongoDB Connection
 mongoose
-  .connect(process.env.DB_URl)
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => console.error("❌MongoDB Connection Failed:", err));
-app.use("/category", categoryRoute);
-app.use("/subcategory", subcategoryRoute);
-app.use("/todos", todosRoute);
-app.use("/user", userRoute);
+  .connect(process.env.DB_URL)
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch((err) => console.error('❌ MongoDB Connection Failed:', err));
 
-// Route for uploading two files
-// app.post(
-//   "/upload",
-//   upload.fields([{ name: "categories" }, { name: "todos" }]),
-//   async (req, res) => {
-//     try {
-//       const categoryFile = req.files["categories"]?.[0];
-//       const todosFile = req.files["todos"]?.[0];
+// Routes
+app.use('/category', categoryRoute);
+app.use('/subcategory', subcategoryRoute);
+app.use('/todos', todosRoute);
+app.use('/user', userRoute);
+app.use('/', hubsportRoute)
+// Default Route
+app.get('/', (req, res) => {
+  if (req.isAuthenticated()) {
+    return res.redirect('/usercrediantion');
+  }
+  res.redirect('/auth/google');
+});
 
-//       if (!categoryFile || !todosFile) {
-//         return res.status(400).json({
-//           error: "Both files (categories and todos) must be uploaded.",
-//         });
-//       }
+// Function to get leads from the hubsport 
+// const getLeadsFromHubSpot = async (accessToken) => {
+//   try {
+//     // Make the GET request to HubSpot to fetch leads data
+//     const response = await axios.get('https://api.hubapi.com/crm/v3/properties/leads', {
+//       headers: {
+//         Authorization: `Bearer ${accessToken}`, // access token to set in request
+//       },
+//     });
 
-//       // Parse Categories + Subcategories file
-//       const categoryWorkbook = xlsx.read(categoryFile.buffer, {
-//         type: "buffer",
-//       });
-//       const categorySheet =
-//         categoryWorkbook.Sheets[categoryWorkbook.SheetNames[0]];
-//       const categoryData = xlsx.utils.sheet_to_json(categorySheet);
-//       console.log(categoryData, "post Category reading");
-//       const categoryCache = new Map();
-//       const subcategoryCache = new Map();
+//     // Return the leads data from the response
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error fetching leads from HubSpot:', error.response?.data || error.message);
+//     throw new Error('Failed to fetch leads from HubSpot');
+//   }
+// };
 
-//       for (const row of categoryData) {
-//         const categoryName = row.Category?.trim();
-//         const subcategoryName = row.Subcategory?.trim();
+// Google OAuth Routes
+app.get(
+  '/auth/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+  })
+);
+app.get('/', (req, res) => {
+  if (req.isAuthenticated()) {
+    return res.redirect('/usercrediantion');
+  }
+  res.redirect('/auth/google');
+});
 
-//         if (!categoryName || !subcategoryName) continue;
+app.get(
+  '/auth/google/callback',
 
-//         let category = categoryCache.get(categoryName);
+  passport.authenticate('google', {
+    failureRedirect: '/login',
+  }),
+  (req, res) => {
+    res.redirect('/usercrediantion');
+  }
+);
+// Protected Route After Login
+app.get('/usercrediantion', (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.redirect('/');
+  }
 
-//         if (!category) {
-//           category = await CategoryModel.findOne({ name: categoryName });
-//           if (!category) {
-//             category = new CategoryModel({ name: categoryName });
-//             await category.save();
-//           }
-//           categoryCache.set(categoryName, category);
-//         }
+  const email = req.user.emails?.[0]?.value || 'No email';
+  res.send(`Welcome ${req.user.displayName} (${email})`);
+});
 
-//         let subcategory = await SubcategoryModel.findOne({
-//           name: subcategoryName,
-//           categoryId: category._id,
-//         });
-//         console.log(subcategory, "After save or created subcategory");
-//         if (!subcategory) {
-//           subcategory = new SubcategoryModel({
-//             name: subcategoryName,
-//             categoryId: category._id,
-//           });
-//           await subcategory.save();
-//         }
 
-//         subcategoryCache.set(subcategory._id.toString(), subcategory);
-//       }
+app.get('/dashboard', (req, res) => {
+  res.send('Google login successful!');
+});
+app.get('/login', (req, res) => {
+  res.send('Login failed. Try again.');
+});
 
-//       // Parse Todos + Subcategory ID file
-//       const todosWorkbook = xlsx.read(todosFile.buffer, { type: "buffer" });
-//       const todosSheet = todosWorkbook.Sheets[todosWorkbook.SheetNames[0]];
-//       const todosData = xlsx.utils.sheet_to_json(todosSheet);
-//       console.log(todosData, "DAE");
+// const hubspotClient = new Client();
 
-//       for (const row of todosData) {
-//         const todoName = row.Todo?.trim();
-//         const subcategoryId = row.SubcategoryId?.trim();
+// app.get("/auth/hubspot", (req, res) => {
+//   const authUrl = hubspotClient.oauth.getAuthorizationUrl(CLIENT_ID, REDIRECT_URI, SCOPES);
+//   res.redirect(authUrl);
+// });
 
-//         if (!todoName || !subcategoryId) continue;
+// app.get("/auth/hubspot/callback", async (req, res) => {
+//   const { code } = req.query;
 
-//         const subcategoryExists =
-//           subcategoryCache.get(subcategoryId) ||
-//           (await SubcategoryModel.findById(subcategoryId));
-//         if (!subcategoryExists) continue;
+//   try {
+//     const tokenResponse = await hubspotClient.oauth.defaultApi.createToken(
+//       "authorization_code",
+//       code,
+//       REDIRECT_URI,
+//       CLIENT_ID,
+//       CLIENT_SECRET
+//     );
 
-//         const todo = new TodosModel({
-//           name: todoName,
-//           type: subcategoryId,
-//         });
+//     const accessToken = tokenResponse.body.accessToken;
+//     hubspotClient.setAccessToken(accessToken);
 
-//         await todo.save();
-//       }
+//     const userInfo = await hubspotClient.oauth.defaultApi.getAccessTokenInfo(accessToken);
 
-//       res.status(200).json({ message: "Data imported successfully" });
-//     } catch (error) {
-//       console.error("Upload error:", error);
-//       res.status(500).json({ error: "Failed to process uploaded files" });
+//     res.json({
+//       message: "Authenticated successfully!",
+//       user: userInfo.body
+//     });
+
+//   } catch (err) {
+//     console.error("OAuth Error:", err.response?.body || err.message);
+//     res.status(500).send("OAuth failed.");
+//   }
+// });
+
+
+
+
+
+// const SCOPE = 'oauth'; // ✅ minimal scope just for identity
+
+// app.get('/auth/hubspot', (req, res) => {
+//   const params = querystring.stringify({
+//     client_id: process.env.HUBSPOT_CLIENT_ID,
+//     redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
+//     scope: 'oauth crm.objects.contacts.read crm.objects.companies.read crm.objects.deals.read',
+//     response_type: 'code',
+//   });
+
+//   // Redirect user to HubSpot's OAuth page
+//   res.redirect(`https://app.hubspot.com/oauth/authorize?${params}`);
+// });
+
+
+
+// app.get('/auth/hubspot/callback', async (req, res) => {
+//   const code = req.query.code;
+
+//   if (!code) {
+//     return res.status(400).send('No code received');
+//   }
+
+//   const hubspotClient = new Client();
+
+//   try {
+//     // Step 1: Exchange the authorization code for an access token
+//     const tokenResponse = await hubspotClient.oauth.tokensApi.create(
+//       'authorization_code', // Grant type
+//       code, // Authorization code received in the callback
+//       process.env.HUBSPOT_REDIRECT_URI, // Redirect URI
+//       process.env.HUBSPOT_CLIENT_ID, // Your client ID
+//       process.env.HUBSPOT_CLIENT_SECRET // Your client secret
+//     );
+
+//     console.log('Token Response:', tokenResponse);
+
+//     // Step 2: Check if access_token is in the response body
+//     if (!tokenResponse.accessToken) {
+//       console.error('Access token not found in the response body.');
+//       return res.status(500).send('Access token not found in the response body');
 //     }
+//     const accessToken = tokenResponse.accessToken;
+//     console.log('Received access token:', accessToken); // Log the access token
+
+//     // Step 2: Set the access token for the client
+//     hubspotClient.setAccessToken(accessToken);
+
+//     const userResponse = await hubspotClient.crm.contacts.basicApi.getPage();
+
+//     const leadProperties = await getLeadsFromHubSpot(accessToken);
+//     const userCompanies = await hubspotClient.crm.companies.basicApi.getPage();
+//     const userDeals = await hubspotClient.crm.deals.basicApi.getPage();
+
+//     console.log('User Contacts:', userResponse);
+//     console.log('User Companies:', userCompanies);
+//     console.log("USer deals ", userDeals)
+//     res.json({
+//       message: 'OAuth success',
+//       contacts: userResponse.results,
+//       companies: userCompanies.results,
+//       deals: userDeals.results,
+//       leads: leadProperties.results,  // Return the leads data fetched from the function
+//     });
+
+
+//   } catch (error) {
+//     console.error('OAuth error:', error.response?.body || error.message || error);
+//     res.status(500).send('OAuth failed');
+//   }
+// });
+
+
+
+
+export default app;
+
+
+
+
+
+
+// HubSpot OAuth Routes
+// app.get(
+//   '/auth/hubspot',
+//   passport.authenticate('hubspot', {
+//     scope: ['ouath'],
+//   })
+// );
+
+// app.get(
+//   '/auth/hubspot',
+//   passport.authenticate('hubspot', {
+//     scope: ['oauth'], // Here we add the fileds we want to get from the login site in scope
+//   })
+// );
+
+// app.get(
+//   '/auth/hubspot/callback',
+//   passport.authenticate('hubspot', {
+//     failureRedirect: '/login',
+//   }),
+//   (req, res) => {
+//     console.log('Authenticated user:', req.user);
+//     res.redirect('/');
 //   }
 // );
 
-export default app;
+
+/// Export the app for server usage
+
