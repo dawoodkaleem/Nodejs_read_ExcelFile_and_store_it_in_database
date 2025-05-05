@@ -53,18 +53,18 @@ passport.use(
 //   )
 // );
 
-passport.use(
-  new HubspotStrategy(
-    {
-      clientID: "21df8a3a-638b-4511-af0c-b3d0a9fd194b",
-      clientSecret: "a36ab42a-3bd8-47f2-bd4c-9e7c7b32481c",
-      callbackURL: 'http://localhost:3000/auth/hubspot/callback', // callback url hubspot
-    },
-    function (accessToken, refreshToken, profile, done) {
+// passport.use(
+//   new HubspotStrategy(
+//     {
+//       clientID: "21df8a3a-638b-4511-af0c-b3d0a9fd194b",
+//       clientSecret: "a36ab42a-3bd8-47f2-bd4c-9e7c7b32481c",
+//       callbackURL: 'http://localhost:3000/auth/hubspot/callback', // callback url hubspot
+//     },
+//     function (accessToken, refreshToken, profile, done) {
 
-      console.log("✅ HubSpot Access Token:", accessToken);
-      console.log("✅ HubSpot Profile:", profile);
-      return done(null, profile);
-    }
-  )
-);
+//       console.log("✅ HubSpot Access Token:", accessToken);
+//       console.log("✅ HubSpot Profile:", profile);
+//       return done(null, profile);
+//     }
+//   )
+// );
