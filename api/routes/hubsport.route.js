@@ -1,7 +1,18 @@
 import express from "express";
-import axios from "axios"
+import axios from "axios";
 const router = express.Router();
-import { getAuthHubspot, getCallbackAuthMethod, getHubspotContacts, getHubspotCompanies, getHubspotLeads, getHubspotDeals, createDeals } from "../controller/hubspot.controller.js";
+import {
+  getAuthHubspot,
+  getCallbackAuthMethod,
+  getHubspotContacts,
+  getHubspotCompanies,
+  getHubspotLeads,
+  getHubspotDeals,
+  createDeals,
+  createSingleContact,
+  createBundelOfContacts,
+  getLimited_Number_Of_Contact, getContact_with_Search
+} from "../controller/hubspot.controller.js";
 
 // const getLeadsFromHubSpot = async (accessToken) => {
 //   try {
@@ -20,47 +31,55 @@ import { getAuthHubspot, getCallbackAuthMethod, getHubspotContacts, getHubspotCo
 //   }
 // };
 
+router.get("/auth/hubspot", getAuthHubspot);
+router.get("/auth/hubspot/callback", getCallbackAuthMethod);
 
-router.get('/auth/hubspot', getAuthHubspot);
-router.get('/auth/hubspot/callback', getCallbackAuthMethod);
+router.get("/hubspot/contacts", getHubspotContacts);
+router.get("/hubspot/companies", getHubspotCompanies);
+router.get("/hubspot/leads", getHubspotLeads);
+router.get("/hubspot/deals", getHubspotDeals);
+router.post("/create/deals", createDeals);
+router.post("/create/contact", createSingleContact);
+router.post("/create/bundelcontacts", createBundelOfContacts);
+router.get("/hubspot/limitedcontact", getLimited_Number_Of_Contact)
+router.get("/contactsearch", getContact_with_Search), //search with pagination
+  // Endpoint to check scopes from the HubSpot access token
+  router.get("/check-scopes", async (req, res) => {
+    // Extract the access token from the Authorization header
+    const authHeader = req.headers.authorization;
 
-router.get('/hubspot/contacts', getHubspotContacts);
-router.get('/hubspot/companies', getHubspotCompanies);
-router.get('/hubspot/leads', getHubspotLeads)
-router.get('/hubspot/deals', getHubspotDeals)
-router.post('/create/deals', createDeals)
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res
+        .status(401)
+        .json({ error: "Authorization header missing or invalid" });
+    }
 
-// Endpoint to check scopes from the HubSpot access token
-router.get('/check-scopes', async (req, res) => {
-  // Extract the access token from the Authorization header
-  const authHeader = req.headers.authorization;
+    const accessToken = authHeader.split(" ")[1];
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization header missing or invalid' });
-  }
+    try {
+      // Make the request to HubSpot to check scopes
+      const response = await axios.get(
+        `https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
-  const accessToken = authHeader.split(' ')[1];
+      // Log the scopes and return them to the client
+      console.log("Scopes granted:", response.data.scopes);
+      res.status(200).json({
+        message: "Scopes retrieved successfully",
+        scopes: response.data.scopes,
+      });
+    } catch (error) {
+      console.error(
+        "Error fetching scopes from HubSpot:",
+        error.response?.data || error.message
+      );
+      res.status(500).json({ error: "Failed to fetch scopes from HubSpot" });
+    }
+  });
 
-  try {
-    // Make the request to HubSpot to check scopes
-    const response = await axios.get(`https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    // Log the scopes and return them to the client
-    console.log('Scopes granted:', response.data.scopes);
-    res.status(200).json({
-      message: 'Scopes retrieved successfully',
-      scopes: response.data.scopes,
-    });
-  } catch (error) {
-    console.error('Error fetching scopes from HubSpot:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch scopes from HubSpot' });
-  }
-});
-
-
-
-export default router
+export default router;
