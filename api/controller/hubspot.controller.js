@@ -1,7 +1,6 @@
-
-import querystring from 'querystring'
+import querystring from "querystring";
 import { Client } from "@hubspot/api-client";
-import axios from 'axios';
+import axios from "axios";
 import { User } from "../models/user.model.js"; // adjust your path
 
 // const getLeadsFromHubSpot = async (accessToken) => {
@@ -21,25 +20,26 @@ import { User } from "../models/user.model.js"; // adjust your path
 //   }
 // };
 
-
 export const getAuthHubspot = (req, res) => {
   const params = querystring.stringify({
     client_id: process.env.HUBSPOT_CLIENT_ID,
     redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
-    scope: 'oauth crm.objects.contacts.read crm.objects.companies.read crm.objects.leads.read crm.objects.deals.read',
+    scope:
+      "oauth crm.objects.contacts.read crm.objects.companies.read crm.objects.leads.read crm.objects.deals.read crm.objects.contacts.write",
     // scope: 'oauth',
-    response_type: 'code',
+    response_type: "code",
   });
   // Redirect user to HubSpot's OAuth page
   res.redirect(`https://app.hubspot.com/oauth/authorize?${params}`);
-}
-
+};
 
 export const getUserAccessToken = async (userId) => {
   const user = await User.findById(userId);
 
   if (!user || !user.accessToken) {
-    throw new Error('Access token not found. Please connect your HubSpot account.');
+    throw new Error(
+      "Access token not found. Please connect your HubSpot account."
+    );
   }
 
   return user.accessToken;
@@ -50,14 +50,14 @@ export const getCallbackAuthMethod = async (req, res) => {
   // console.log('Callback route triggered');
 
   if (!code) {
-    return res.status(400).send('No code received');
+    return res.status(400).send("No code received");
   }
 
   const hubspotClient = new Client();
 
   try {
     const tokenResponse = await hubspotClient.oauth.tokensApi.create(
-      'authorization_code',
+      "authorization_code",
       code,
       process.env.HUBSPOT_REDIRECT_URI,
       process.env.HUBSPOT_CLIENT_ID,
@@ -71,7 +71,9 @@ export const getCallbackAuthMethod = async (req, res) => {
 
     hubspotClient.setAccessToken(accessToken);
 
-    const userInfoResponse = await axios.get(`https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`);
+    const userInfoResponse = await axios.get(
+      `https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`
+    );
     // console.log(userInfoResponse)
     const hubspotUser = userInfoResponse.data;
 
@@ -98,12 +100,14 @@ export const getCallbackAuthMethod = async (req, res) => {
         name: user.name,
         hubspotConnected: true,
         hubspotId: hubspotUser.user_id,
-        hubspotAccessToken: accessToken
-      }
+        hubspotAccessToken: accessToken,
+      },
     });
-
   } catch (error) {
-    console.error("OAuth error:", error.response?.data || error.message || error);
+    console.error(
+      "OAuth error:",
+      error.response?.data || error.message || error
+    );
     res.status(500).send("OAuth failed");
   }
 };
@@ -111,122 +115,451 @@ export const getCallbackAuthMethod = async (req, res) => {
 export const getHubspotContacts = async (req, res) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization header missing or invalid' });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
   }
 
-  const accessToken = authHeader.split(' ')[1];
+  const accessToken = authHeader.split(" ")[1];
 
   try {
-    const response = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await axios.get(
+      "https://api.hubapi.com/crm/v3/objects/contacts",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     res.status(200).json(response.data);
   } catch (error) {
-    console.error('Error fetching contacts from HubSpot:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch contacts from HubSpot' });
+    console.error(
+      "Error fetching contacts from HubSpot:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({ error: "Failed to fetch contacts from HubSpot" });
   }
-}
+};
 
 export const getHubspotCompanies = async (req, res) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization header missing or invalid' });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
   }
 
-  const accessToken = authHeader.split(' ')[1];
+  const accessToken = authHeader.split(" ")[1];
 
   try {
-    const response = await axios.get('https://api.hubapi.com/crm/v3/objects/companies', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await axios.get(
+      "https://api.hubapi.com/crm/v3/objects/companies",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     res.status(200).json(response.data, "Header auth", authHeader);
   } catch (error) {
-    console.error('Error fetching companies from HubSpot:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch companies from HubSpot' });
+    console.error(
+      "Error fetching companies from HubSpot:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({ error: "Failed to fetch companies from HubSpot" });
   }
-}
+};
 
 export const getHubspotLeads = async (req, res) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization header missing or invalid' });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
   }
 
-  const accessToken = authHeader.split(' ')[1];
+  const accessToken = authHeader.split(" ")[1];
   // console.log("We are here and ", accessToken)
 
   // await axios.get('https://api.hubapi.com/crm/v3/properties/leads',
   try {
-    const response = await axios.get('https://api.hubapi.com/crm/v3/objects/leads?properties=firstname,lastname,email', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await axios.get(
+      "https://api.hubapi.com/crm/v3/objects/leads?properties=firstname,lastname,email",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     res.status(200).json(response);
-  } catch (error) {
-    console.error('Error fetching leads from HubSpot:', error.response?.data || error.message);
+  } catch (err) {
+    console.log(
+      "Error fetching leads from HubSpot:",
+      err.response?.data || err.message
+    );
     res.status(500).json({ error: error.response?.data || error.message });
   }
-
-}
+};
 
 export const getHubspotDeals = async (req, res) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization header missing or invalid' });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
   }
 
-  const accessToken = authHeader.split(' ')[1];
+  const accessToken = authHeader.split(" ")[1];
 
   try {
-    const response = await axios.get('https://api.hubapi.com/crm/v3/objects/deals', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await axios.get(
+      "https://api.hubapi.com/crm/v3/objects/deals",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     res.status(200).json(response.data);
   } catch (error) {
-    console.error('Error fetching deals from HubSpot:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch deals from HubSpot' });
+    console.error(
+      "Error fetching deals from HubSpot:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({ error: "Failed to fetch deals from HubSpot" });
   }
-}
+};
 
 export const createDeals = async (req, res) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization header missing or invalid' });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
   }
 
-  const accessToken = authHeader.split(' ')[1];
+  const accessToken = authHeader.split(" ")[1];
   const { properties, associations } = req.body;
   const dealsData = {
     properties,
-    associations: associations || []
-  }
+    associations: associations || [],
+  };
   try {
-    const apiResponse = await hubspotClient.crm.deals.basicApi.create(dealsData);
+    const apiResponse = await hubspotClient.crm.deals.basicApi.create(
+      dealsData
+    );
     console.log(JSON.stringify(apiResponse, null, 2));
-    res.status(200).json(apiResponse)
+    res.status(200).json(apiResponse);
   } catch (err) {
-    console.log(err)
-    res.status(404).json(err)
+    console.log(err.response);
+    res
+      .status(404)
+      .json({ message: "Fail to create the Deals data ", error: err });
+  }
+};
+
+export const createSingleContact = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
   }
 
+  const accessToken = authHeader.split(" ")[1];
 
-}
+  const hubspotClient = new Client({ accessToken: accessToken });
+
+  const properties = req.body.properties;
+  console.log(req.body.properties);
+  const SimplePublicObjectInputForCreate = { associations: [], properties };
+
+  try {
+    const apiResponse = await hubspotClient.crm.contacts.basicApi.create(
+      SimplePublicObjectInputForCreate
+    );
+    console.log(JSON.stringify(apiResponse, null, 2));
+    res.status(200).json(apiResponse);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ error: err });
+  }
+};
+
+export const createBundelOfContacts = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
+  }
+
+  const accessToken = authHeader.split(" ")[1];
+  const hubspotClient = new Client({ accessToken });
+
+  // Get the payload from the request body
+  const { inputs } = req.body;
+
+  if (!inputs || !Array.isArray(inputs)) {
+    return res
+      .status(400)
+      .json({ error: 'Invalid or missing "inputs" array in request body' });
+  }
+
+  // HubSpot API only allows max 100 contacts per batch request remember to tell uzair bahi
+  const BATCH_SIZE = 100;
+
+  try {
+    const results = [];
+
+    for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
+      const batch = inputs.slice(i, i + BATCH_SIZE);
+
+      const response = await hubspotClient.crm.contacts.batchApi.create({
+        inputs: batch,
+      });
+      console.log(`Batch ${i / BATCH_SIZE + 1}:`, response);
+      results.push(response);
+    }
+    const Recordlenght = results.length;
+    res
+      .status(200)
+      .json({
+        message: "All contacts created in batches",
+        Recordlenght,
+        results,
+      });
+  } catch (err) {
+    console.error("HubSpot Batch Create Error:", err.message);
+    res.status(500).json({ error: err.message || "Unknown error" });
+  }
+};
+
+export const getLimited_Number_Of_Contact = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  // console.log(req.query, "WWWWWWWWWWWWWWWWWWWWWW");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
+  }
+
+  const accessToken = authHeader.split(" ")[1];
+  const hubspotClient = new Client({ accessToken });
+
+  const limit = req.query.limit;
+  const after = req.query.after || undefined;
+  const properties = undefined;
+  const propertiesWithHistory = undefined;
+  const associations = undefined;
+  const archived = false;
+  console.log(req.query, "Cheking if limit is working or have undefine");
+  try {
+    const apiResponse = await hubspotClient.crm.contacts.basicApi.getPage(
+      limit,
+      after,
+      properties,
+      propertiesWithHistory,
+      associations,
+      archived
+    );
+    // console.log(JSON.stringify(apiResponse, null, 2));
+    res
+      .status(200)
+      .json({
+        message: `lenght is ${apiResponse.results.length}`,
+        Results: apiResponse.results,
+      });
+  } catch (err) {
+    console.error("HubSpot Batch Create Error:", err.message);
+    res.status(500).json({ error: err.message || "Unknown error" });
+  }
+};
+
+
+
+
+export const getContact_with_Search = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authorization header missing or invalid" });
+  }
+
+  const accessToken = authHeader.split(" ")[1];
+  const hubspotClient = new Client({ accessToken });
+
+  const limit = parseInt(req.query.limit) || 10;
+  const after = req.query.after || undefined;
+  const search = req.query.search || null;
+
+  try {
+    if (search) {
+      //  If search query is provided, use search API
+      const request = {
+        // filterGroups: [
+
+        //   {
+        //     filters: [
+        //       {
+        //         propertyName: 'email', // Change to any other property as needed
+        //         operator: 'CONTAINS_TOKEN',
+        //         value: search
+        //       },
+        //       {
+        //         propertyName: 'firstname',
+        //         operator: 'CONTAINS_TOKEN',
+        //         value: search
+        //       },
+        //       {
+        //         propertyName: 'lastname',
+        //         operator: 'CONTAINS_TOKEN',
+        //         value: search
+        //       }
+        //     ]
+        //   }
+        // ],
+        filterGroups: [
+          {
+            filters: [
+              {
+                propertyName: 'email',
+                operator: 'CONTAINS_TOKEN',
+                value: search
+              }
+            ]
+          },
+          {
+            filters: [
+              {
+                propertyName: 'firstname',
+                operator: 'CONTAINS_TOKEN',
+                value: search
+              }
+            ]
+          },
+          {
+            filters: [
+              {
+                propertyName: 'lastname',
+                operator: 'CONTAINS_TOKEN',
+                value: search
+              }
+            ]
+          }
+        ],
+        properties: ['firstname', 'lastname', 'email',"name"],
+        limit:limit,
+        after
+      };
+
+      const apiResponse = await hubspotClient.crm.contacts.searchApi.doSearch(request);
+
+      return res.status(200).json({
+        message: `Search returned ${apiResponse.results.length} results.`,
+        Results: apiResponse,
+        paging: apiResponse.paging?.next || null
+      });
+    } else {
+      //  If no search, use regular paginated list
+      const apiResponse = await hubspotClient.crm.contacts.basicApi.getPage(
+        limit,
+        after,
+        undefined,
+        undefined,
+        undefined,
+        false
+      );
+
+      return res.status(200).json({
+        message: `List returned ${apiResponse.results.length} results.`,
+        Results: apiResponse.results,
+        paging: apiResponse.paging?.next || null
+      });
+    }
+  } catch (err) {
+    console.error("HubSpot Error:", err.message);
+    res.status(500).json({ error: err.message || "Unknown error" });
+  }
+};
+
+
+
+// export const getContact_with_Search = async (req, res) => {
+//   const authHeader = req.headers.authorization;
+  
+//   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+//     return res
+//       .status(401)
+//       .json({ error: "Authorization header missing or invalid" });
+//   }
+
+//   const accessToken = authHeader.split(" ")[1];
+//   const hubspotClient = new Client({ accessToken });
+
+//   const limit = req.query.limit;
+//   const after = req.query.after || undefined;
+//   const properties = undefined;
+//   const propertiesWithHistory = undefined;
+//   const associations = undefined;
+//   const archived = false;
+//   console.log(req.query, "Cheking if limit is working or have undefine");
+//   try {
+//     const apiResponse = await hubspotClient.crm.contacts.basicApi.getPage(
+//       limit,
+//       after,
+//       properties,
+//       propertiesWithHistory,
+//       associations,
+//       archived
+//     );
+//     // console.log(JSON.stringify(apiResponse, null, 2));
+//     res
+//       .status(200)
+//       .json({
+//         message: `lenght is ${apiResponse.results.length}`,
+//         Results: apiResponse.results,
+//       });
+//   } catch (err) {
+//     console.error("HubSpot Batch Create Error:", err.message);
+//     res.status(500).json({ error: err.message || "Unknown error" });
+//   }
+// };
+
+// export const createBundelOfContacts = async (req, res) => {
+//   const authHeader = req.headers.authorization;
+
+//   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+//     return res.status(401).json({ error: 'Authorization header missing or invalid' });
+//   }
+
+//   const accessToken = authHeader.split(' ')[1];
+
+//   const hubspotClient = new Client({ "accessToken": accessToken });
+
+//   const BatchInputSimplePublicObjectBatchInputForCreate = { inputs: [{ "associations": [{ "types": [{ "associationCategory": "HUBSPOT_DEFINED" }], "to": {} }], "properties": {} }] };
+
+//   try {
+//     const apiResponse = await hubspotClient.crm.contacts.batchApi.create(BatchInputSimplePublicObjectBatchInputForCreate);
+//     console.log(apiResponse, "Bundel of Contacts")
+//     res.status(200).json(apiResponse)
+//   } catch (err) {
+//     console.log(err)
+//     res.status(400).json({ error: err })
+//   }
+
+// }
 
 // export const getCallbackAuthMethod = async (req, res) => {
 //   const code = req.query.code;
@@ -270,7 +603,6 @@ export const createDeals = async (req, res) => {
 //     // const deals = await hubspotClient.crm.deals.basicApi.getPage();
 //     // const leads = await getLeadsFromHubSpot(accessToken);
 
-
 //     res.json({
 //       message: 'OAuth success',
 //       userEmail: userEmail,
@@ -285,7 +617,6 @@ export const createDeals = async (req, res) => {
 //     res.status(500).send('OAuth failed');
 //   }
 // };
-
 
 // export const getCallbackAuthMethod = async (req, res) => {
 //   const code = req.query.code;
@@ -339,14 +670,11 @@ export const createDeals = async (req, res) => {
 //       leads: leadProperties.results,  // Return the leads data fetched from the function
 //     });
 
-
 //   } catch (error) {
 //     console.error('OAuth error:', error.response?.body || error.message || error);
 //     res.status(500).send('OAuth failed');
 //   }
 // }
-
-
 
 // Post create single deal from Hubspot deals
 
@@ -367,4 +695,3 @@ export const createDeals = async (req, res) => {
 //     console.error('❌ Error creating deal:', e.response?.body || e.message || e);
 //   }
 // }
-
