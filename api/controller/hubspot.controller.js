@@ -25,7 +25,7 @@ export const getAuthHubspot = (req, res) => {
     client_id: process.env.HUBSPOT_CLIENT_ID,
     redirect_uri: process.env.HUBSPOT_REDIRECT_URI,
     scope:
-      "oauth crm.objects.contacts.read crm.objects.companies.read crm.objects.leads.read crm.objects.deals.read crm.objects.contacts.write",
+      "oauth crm.objects.contacts.read crm.objects.companies.read crm.objects.leads.read crm.objects.deals.read crm.objects.contacts.write crm.schemas.contacts.write",
     // scope: 'oauth',
     response_type: "code",
   });
@@ -74,7 +74,7 @@ export const getCallbackAuthMethod = async (req, res) => {
     const userInfoResponse = await axios.get(
       `https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`
     );
-    // console.log(userInfoResponse)
+    console.log(userInfoResponse ,"Hello ")
     const hubspotUser = userInfoResponse.data;
 
     // Create or update the user in MongoDB
@@ -463,7 +463,8 @@ export const getContact_with_Search = async (req, res) => {
         limit:limit,
         after
       };
-
+      const response = await hubspotClient.crm.properties.coreApi.getAll('contacts');
+console.log(response,"Checking all the coreApi ")
       const apiResponse = await hubspotClient.crm.contacts.searchApi.doSearch(request);
 
       return res.status(200).json({
@@ -493,6 +494,122 @@ export const getContact_with_Search = async (req, res) => {
     res.status(500).json({ error: err.message || "Unknown error" });
   }
 };
+
+
+
+export const getHubspotContactProperties = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  // Check if the Authorization header is valid
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authorization header missing or invalid' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+
+  try {
+    // Make the API call to HubSpot
+    const response = await axios.get('https://api.hubapi.com/crm/v3/properties/contacts', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    // const filteredProperties = response.data.results.filter(
+    //   (property) => property.lable === property.lable
+    // );
+
+
+    // const labels = response.data.results.map((property) => ({
+    //   name: property.name,
+    //   label: property.label,
+    //   displayOrder:property.displayOrder
+    // }));
+res.json({results:response.data.results})
+    // Return the filtered list
+    // res.status(200).json({ results: labels });
+    // 
+   
+  } catch (error) {
+    console.error('Error fetching contact properties from HubSpot:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to fetch contact properties from HubSpot' });
+  }
+};
+
+
+
+ export const createContactProperty = async (req, res) => {
+  const accessToken = req.headers.authorization?.split(' ')[1];
+
+  if (!accessToken) {
+    return res.status(401).json({ error: 'Access token missing or invalid' });
+  }
+
+  try {
+    const propertyPayload = req.body
+    // {
+    //   name: "favorite_food",              // internal name (required, no spaces)
+    //   label: "Favorite Food",             // display label
+    //   type: "string",                     // data type (string, number, datetime, bool)
+    //   fieldType: "text",                  // how it looks (text field, dropdown, etc.)
+    //   groupName: "contactinformation",    // property group
+    //   description: "What is their favorite food?",
+    //   formField: true                     // should it appear on forms
+    // };
+
+    const response = await axios.post(
+      'https://api.hubapi.com/crm/v3/properties/contacts',
+      propertyPayload,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.status(201).json(response.data);
+  } catch (error) {
+    console.error('Error creating property:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to create contact property' });
+  }
+};
+
+export const getSelectedHubspotContactProperties = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authorization header missing or invalid' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+  const { properties } = req.body;
+
+  if (!Array.isArray(properties) || properties.length === 0) {
+    return res.status(400).json({ error: 'Please provide an array of property names' });
+  }
+
+  try {
+    const responses = await Promise.all(
+      properties.map((prop) =>
+        axios.get(`https://api.hubapi.com/crm/v3/properties/contacts/${prop}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        })
+      )
+    );
+
+    const result = responses.map((r) => r.data);
+
+    res.status(200).json({ results: result });
+  } catch (error) {
+    console.error('Error fetching specific contact properties from HubSpot:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to fetch selected properties from HubSpot' });
+  }
+};
+
 
 
 
