@@ -5,13 +5,11 @@ import session from 'express-session';
 import passport from 'passport';
 import 'dotenv/config.js';
 import morgan from "morgan"
-import querystring from 'querystring'
 import categoryRoute from './api/routes/category.route.js';
 import subcategoryRoute from './api/routes/subcategory.route.js';
 import todosRoute from './api/routes/todo.route.js';
 import userRoute from './api/routes/user.route.js';
-import { Client } from "@hubspot/api-client";
-import axios from 'axios';  // Add this import
+import PipedriveRoute from './api/routes/pipedrive.route.js'
 import hubsportRoute from './api/routes/hubsport.route.js'
 // const hubspotClient = new Client({ accessToken: YOUR_ACCESS_TOKEN });
 import './passport.js'; // Passport strategy setup
@@ -50,6 +48,7 @@ app.use('/subcategory', subcategoryRoute);
 app.use('/todos', todosRoute);
 app.use('/user', userRoute);
 app.use('/', hubsportRoute)
+app.use('/oauth/pipedrive', PipedriveRoute)
 // Default Route
 app.get('/', (req, res) => {
   if (req.isAuthenticated()) {
