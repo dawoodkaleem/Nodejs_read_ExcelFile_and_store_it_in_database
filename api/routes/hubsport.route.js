@@ -11,7 +11,10 @@ import {
   createDeals,
   createSingleContact,
   createBundelOfContacts,
-  getLimited_Number_Of_Contact, getContact_with_Search
+  getLimited_Number_Of_Contact,
+  getContact_with_Search,
+  getHubspotContactProperties,
+  createContactProperty, getSelectedHubspotContactProperties
 } from "../controller/hubspot.controller.js";
 
 // const getLeadsFromHubSpot = async (accessToken) => {
@@ -41,45 +44,49 @@ router.get("/hubspot/deals", getHubspotDeals);
 router.post("/create/deals", createDeals);
 router.post("/create/contact", createSingleContact);
 router.post("/create/bundelcontacts", createBundelOfContacts);
-router.get("/hubspot/limitedcontact", getLimited_Number_Of_Contact)
+router.get("/hubspot/limitedcontact", getLimited_Number_Of_Contact);
 router.get("/contactsearch", getContact_with_Search), //search with pagination
-  // Endpoint to check scopes from the HubSpot access token
-  router.get("/check-scopes", async (req, res) => {
-    // Extract the access token from the Authorization header
-    const authHeader = req.headers.authorization;
+  router.get("/allcontactproperties", getHubspotContactProperties);
+router.post("/createspecificproperty", createContactProperty)
+router.post('/api/hubspot/properties', getSelectedHubspotContactProperties);
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res
-        .status(401)
-        .json({ error: "Authorization header missing or invalid" });
-    }
+// Endpoint to check scopes from the HubSpot access token
+router.get("/check-scopes", async (req, res) => {
+  // Extract the access token from the Authorization header
+  const authHeader = req.headers.authorization;
 
-    const accessToken = authHeader.split(" ")[1];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "Authorization header missing or invalid" });
+  }
 
-    try {
-      // Make the request to HubSpot to check scopes
-      const response = await axios.get(
-        `https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+  const accessToken = authHeader.split(" ")[1];
 
-      // Log the scopes and return them to the client
-      console.log("Scopes granted:", response.data.scopes);
-      res.status(200).json({
-        message: "Scopes retrieved successfully",
-        scopes: response.data.scopes,
-      });
-    } catch (error) {
-      console.error(
-        "Error fetching scopes from HubSpot:",
-        error.response?.data || error.message
-      );
-      res.status(500).json({ error: "Failed to fetch scopes from HubSpot" });
-    }
-  });
+  try {
+    // Make the request to HubSpot to check scopes
+    const response = await axios.get(
+      `https://api.hubapi.com/oauth/v1/access-tokens/${accessToken}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    // Log the scopes and return them to the client
+    console.log("Scopes granted:", response.data.scopes);
+    res.status(200).json({
+      message: "Scopes retrieved successfully",
+      scopes: response.data.scopes,
+    });
+  } catch (error) {
+    console.error(
+      "Error fetching scopes from HubSpot:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({ error: "Failed to fetch scopes from HubSpot" });
+  }
+});
 
 export default router;
