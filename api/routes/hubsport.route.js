@@ -10,45 +10,27 @@ import {
   getHubspotDeals,
   createDeals,
   createSingleContact,
-  createBundelOfContacts,
+  createBundleOfContacts,
   getLimited_Number_Of_Contact,
   getContact_with_Search,
   getHubspotContactProperties,
-  createContactProperty, getSelectedHubspotContactProperties
+  createContactProperty, fetchSelectedContactProperties
 } from "../controller/hubspot.controller.js";
-
-// const getLeadsFromHubSpot = async (accessToken) => {
-//   try {
-//     // Make the GET request to HubSpot to fetch leads data
-//     const response = await axios.get('https://api.hubapi.com/crm/v3/properties/leads', {
-//       headers: {
-//         Authorization: `Bearer ${accessToken}`, // access token to set in request
-//       },
-//     });
-
-//     // Return the leads data from the response
-//     return response.data;
-//   } catch (error) {
-//     console.error('Error fetching leads from HubSpot:', error.response?.data || error.message);
-//     throw new Error('Failed to fetch leads from HubSpot');
-//   }
-// };
-
+import { verifyBearerToken } from "../middleware/auth.accesstoken.checker.js";
 router.get("/auth/hubspot", getAuthHubspot);
 router.get("/auth/hubspot/callback", getCallbackAuthMethod);
-
-router.get("/hubspot/contacts", getHubspotContacts);
-router.get("/hubspot/companies", getHubspotCompanies);
-router.get("/hubspot/leads", getHubspotLeads);
-router.get("/hubspot/deals", getHubspotDeals);
-router.post("/create/deals", createDeals);
-router.post("/create/contact", createSingleContact);
-router.post("/create/bundelcontacts", createBundelOfContacts);
-router.get("/hubspot/limitedcontact", getLimited_Number_Of_Contact);
-router.get("/contactsearch", getContact_with_Search), //search with pagination
-  router.get("/allcontactproperties", getHubspotContactProperties);
-router.post("/createspecificproperty", createContactProperty)
-router.post('/api/hubspot/properties', getSelectedHubspotContactProperties);
+router.get("/hubspot/contacts", verifyBearerToken, getHubspotContacts);
+router.get("/hubspot/companies", verifyBearerToken, getHubspotCompanies);
+router.get("/hubspot/leads", verifyBearerToken, getHubspotLeads);
+router.get("/hubspot/deals", verifyBearerToken, getHubspotDeals);
+router.post("/create/deals", verifyBearerToken, createDeals);
+router.post("/create/contact", verifyBearerToken, createSingleContact);
+router.post("/create/bundelcontacts", verifyBearerToken, createBundleOfContacts);
+router.get("/hubspot/limitedcontact", verifyBearerToken, getLimited_Number_Of_Contact);
+router.get("/contactsearch", verifyBearerToken, getContact_with_Search), //search with pagination
+  router.get("/allcontactproperties", verifyBearerToken, getHubspotContactProperties);
+router.post("/createspecificproperty", verifyBearerToken, createContactProperty)
+router.post('/api/hubspot/properties', verifyBearerToken, fetchSelectedContactProperties);
 
 // Endpoint to check scopes from the HubSpot access token
 router.get("/check-scopes", async (req, res) => {

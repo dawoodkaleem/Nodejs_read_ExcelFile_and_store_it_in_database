@@ -1,108 +1,68 @@
-import SubcategoryModel from "../models/subcatogory.model.js";
-// import subcatogoryModel from "../models/subcatogory.model.js";
+import {
+  getAllSubcategoriesService,
+  createSubcategoryService,
+  updateSubcategoryService,
+  getSubcategoryByIdService,
+  deleteSubcategoryService,
+} from "../services/subcategory.services.js";
 
-export const getSubcategory = (req, res, next) => {
-  SubcategoryModel.find()
-    .exec()
-    .then((docs) => {
-      console.log(docs);
-      const response = {
-        count: docs.length,
-        product: docs.map((doc) => {
-          return {
-            name: doc.name,
-            _id: doc._id,
-          };
-        }),
-      };
-      res.status(200).json(response);
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: err });
-    });
-};
-export const createSubcategory = async (req, res, next) => {
+export const getSubcategory = async (req, res) => {
   try {
-    const subCategory = new SubcategoryModel({
-      name: req.body.name,
-      categoryId: req.body.categoryId || "Dummy Monggose",
-    });
-
-    // console.log("subCategory", subCategory);
-
-    const save = await SubcategoryModel.save();
-    res
-      .status(200)
-      .json({ message: " created subcategory Inside the SubCategory", save });
-  } catch (error) {
-    res.status(500).json({ message: "Subcategory not found " });
-    console.log(error);
-  }
-};
-
-export const updateSubcategory = async (req, res, next) => {
-  const id = req.params.subcategoryId;
-  const name = req.body.name;
-  try {
-    console.log(" in try section");
-    const updatedUser = await SubcategoryModel.findByIdAndUpdate(
-      id,
-      { name },
-      {
-        new: true,
-      }
-    );
-    console.log("out  try section");
-    return res.send({ updatedUser }) || "User not found.";
+    const result = await getAllSubcategoriesService();
+    res.status(200).json(result);
   } catch (err) {
-    console.log("we are in catch in putCategory");
-    return res.send("User not found");
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 };
 
-export const getSubcategory_by_id = (req, res, next) => {
-  const id = req.params.subcategoryId;
+export const createSubcategory = async (req, res) => {
+  try {
+    const { name, categoryId } = req.body;
+    const saved = await createSubcategoryService(name, categoryId);
+    res.status(201).json({ message: "Subcategory created", saved });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to create subcategory" });
+  }
+};
 
-  SubcategoryModel.findById(id)
-    .exec()
-    .then((docs) => {
-      docs.name, id, res.status(200).json(docs);
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: err });
-    });
+export const updateSubcategory = async (req, res) => {
+  const { subcategoryId } = req.params;
+  const { name } = req.body;
+
+  try {
+    const updated = await updateSubcategoryService(subcategoryId, name);
+    res.status(200).json({ updated });
+  } catch (err) {
+    console.error(err);
+    res.status(404).json({ message: err.message });
+  }
+};
+
+export const getSubcategory_by_id = async (req, res) => {
+  const { subcategoryId } = req.params;
+
+  try {
+    const subcategory = await getSubcategoryByIdService(subcategoryId);
+    res.status(200).json(subcategory);
+  } catch (err) {
+    console.error(err);
+    res.status(404).json({ message: err.message });
+  }
 };
 
 export const deleteSubcategory = async (req, res) => {
-  const id = req.params.subcategoryId;
+  const { subcategoryId } = req.params;
 
   try {
-    await SubcategoryModel.deleteOne({ _id: id });
-
-    res.status(200).json({
-      message: `SubCategory deleted successfully: ${id}`,
-    });
+    const result = await deleteSubcategoryService(subcategoryId);
+    res.status(200).json(result);
   } catch (error) {
-    console.error("Delete Subcategory Error:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to delete subcategory", details: error.message });
+    console.error(error);
+    res.status(500).json({
+      error: "Failed to delete subcategory",
+      details: error.message,
+    });
   }
 };
-
-// export const deleteSubcategory = (req, res) => {
-//   const id = req.params.subcategoryId;
-//   SubcategoryModel.deleteOne({ _id: id })
-//     .exec()
-//     .then(() => {
-//       res.status(200).json({
-//         message: `SubCategory Deleted sucessfully ${id}`,
-//       });
-//     })
-//     .catch((err) => {
-//       // console.log(err);
-//       res.status(500).json({ error: err });
-//     });
-// };
